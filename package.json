@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/kazmyriad/Bonus-Roll#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "react": "^19.2.5",
+    "vite": "^8.0.9"
   }
 }
