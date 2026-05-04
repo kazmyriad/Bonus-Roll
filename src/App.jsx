@@ -3,8 +3,13 @@ import "./styles.css";
 
 const API_BASE = "http://localhost:3000";
 
+function toId(value) {
+  if (!value) return "";
+  return String(value);
+}
+
 function getId(item, documentedKey) {
-  return item?.[documentedKey] || item?._id || "";
+  return toId(item?.[documentedKey] || item?._id || item?.id);
 }
 
 function normalizeGame(game) {
@@ -12,9 +17,13 @@ function normalizeGame(game) {
   return {
     ...game,
     gameId: getId(game, "gameId"),
-    players: game.players || [],
-    dice: game.dice || game.die || [],
-    diceSets: game.diceSets || [],
+    activePlayerId: toId(game.activePlayerId),
+    activeDiceSetId: toId(game.activeDiceSetId),
+    name: game.name || "Untitled game",
+    game: game.game || "Unknown system",
+    players: (game.players || []).map(normalizePlayer),
+    dice: (game.dice || game.die || []).map(normalizeDie),
+    diceSets: (game.diceSets || []).map(normalizeDiceSet),
   };
 }
 
@@ -30,7 +39,7 @@ function normalizeDie(die) {
 
 function normalizeDiceSet(diceSet) {
   if (!diceSet) return null;
-  return { ...diceSet, diceSetId: getId(diceSet, "diceSetId") };
+  return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
 }
 
 async function apiRequest(path, options = {}) {
@@ -209,11 +218,15 @@ function ManageGamesPage({ session, onLogout }) {
     [games, activeGameId],
   );
 
-  async function loadGames() {
+  async function loadGames(preferredGameId = "") {
     const data = await apiRequest(`/accounts/${session.acctId}/games`);
     const nextGames = (data.games || []).map(normalizeGame);
     setGames(nextGames);
-    setActiveGameId((current) => current || nextGames[0]?.gameId || "");
+    setActiveGameId((current) => {
+      if (preferredGameId && nextGames.some((game) => game.gameId === preferredGameId)) return preferredGameId;
+      if (current && nextGames.some((game) => game.gameId === current)) return current;
+      return nextGames[0]?.gameId || "";
+    });
   }
 
   useEffect(() => {
@@ -224,6 +237,10 @@ function ManageGamesPage({ session, onLogout }) {
     if (!gameId) return;
     const data = await apiRequest(`/accounts/${session.acctId}/games/${gameId}`);
     const nextGame = normalizeGame(data.game || data);
+    if (!nextGame?.gameId) {
+      await loadGames(gameId);
+      return;
+    }
     setGames((current) => current.map((game) => (game.gameId === gameId ? nextGame : game)));
   }
 
@@ -270,9 +287,8 @@ function ManageGamesPage({ session, onLogout }) {
         headers: authHeaders(session.token),
         body: JSON.stringify(gameForm),
       });
-      const nextGame = normalizeGame(data.game || data);
-      setGames((current) => [...current, nextGame]);
-      setActiveGameId(nextGame.gameId);
+      const createdGameId = getId(data.game || data, "gameId");
+      await loadGames(createdGameId);
       setGameForm({ name: "", game: "" });
       setMessage({ type: "success", text: "Game created." });
     } catch (error) {
@@ -346,7 +362,7 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ username: playerName }),
       });
       setPlayerName("");
-      await refreshGame(activeGame.gameId);
+      await loadGames(activeGame.gameId);
       setMessage({ type: "success", text: "Player created." });
     } catch (error) {
       setMessage({ type: "error", text: error.message });
