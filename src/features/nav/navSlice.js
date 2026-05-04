@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState ={
     isOpen: false, 
-    // ^^ is this page the one thats currently open?
     activeLink: "roller",
     // Which page is currently active? What page are we on?
 };
