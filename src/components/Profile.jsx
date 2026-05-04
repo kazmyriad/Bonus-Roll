@@ -63,7 +63,6 @@ function Profile() {
     <main className="appPage">
       <section className="pageHeader">
         <div>
-          <p className="eyebrow">Account</p>
           <h1>Profile</h1>
           <p className="muted">Sign in, create an account, and manage your saved games.</p>
         </div>

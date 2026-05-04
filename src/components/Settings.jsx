@@ -1,58 +1,136 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import "../styles.css";
 
 const API_BASE = "http://localhost:3000";
 
-function Settings() {
-  const [acctId] = useState(localStorage.getItem("acctId") || "");
-  const [token] = useState(localStorage.getItem("token") || "");
+async function api(path, { token, method = "GET", body } = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: token } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+
+  if (!res.ok) {
+    throw new Error(data?.error || `Request failed: ${res.status}`);
+  }
+
+  return data;
+}
+
+function getId(item) {
+  return item?._id || item?.gameId || item?.playerId || item?.dieId || item?.diceSetId;
+}
+
+function unwrapGame(data) {
+  return data?.game || data;
+}
+
+function parseNumberList(value) {
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => !Number.isNaN(item));
+}
+
+function Settings({ session = {}, setSession }) {
+  const [acctId, setAcctId] = useState(session.acctId || "");
+  const [token, setToken] = useState(session.token || "");
   const [games, setGames] = useState([]);
-  const [gameId, setGameId] = useState(localStorage.getItem("gameId") || "");
   const [game, setGame] = useState(null);
+  const [selectedGameId, setSelectedGameId] = useState(session.selectedGameId || "");
+
   const [newGameName, setNewGameName] = useState("");
-  const [newPlayer, setNewPlayer] = useState("");
+  const [newGameType, setNewGameType] = useState("Dungeons & Dragons");
+  const [editGameName, setEditGameName] = useState("");
+  const [editGameType, setEditGameType] = useState("");
+
+  const [newPlayerName, setNewPlayerName] = useState("");
+
   const [dieName, setDieName] = useState("");
-  const [dieColor, setDieColor] = useState("#d95f2b");
+  const [dieColor, setDieColor] = useState("#2f80ed");
+  const [faceValues, setFaceValues] = useState("1,2,3,4,5,6");
+  const [frequencyDist, setFrequencyDist] = useState("1,1,1,1,1,1");
+
+  const [diceSetName, setDiceSetName] = useState("");
+  const [selectedDiceIds, setSelectedDiceIds] = useState([]);
+  const [scoring, setScoring] = useState("return $0");
+
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  async function request(path, options = {}) {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: token } : {}),
-      },
-      ...options,
-    });
+  const canUseAccount = Boolean(acctId);
+  const canUseDmRoutes = Boolean(acctId && token);
+  const canUseGameRoutes = Boolean(acctId && selectedGameId);
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Request failed");
-    return data;
+  const diceById = useMemo(() => {
+    const pairs = game?.dice?.map((die) => [getId(die), die]) || [];
+    return new Map(pairs);
+  }, [game]);
+
+  function rememberSelectedGame(gameId) {
+    setSelectedGameId(gameId);
+
+    if (setSession) {
+      setSession((previous) => ({
+        ...previous,
+        acctId,
+        token,
+        selectedGameId: gameId,
+      }));
+    }
   }
 
   async function loadGames() {
-    const data = await request(`/accounts/${acctId}/games`);
-    setGames(data.games || []);
+    try {
+      setError("");
+      setMessage("");
+
+      const data = await api(`/accounts/${acctId}/games`);
+      setGames(data.games || []);
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
-  async function loadGame(id = gameId) {
-    const data = await request(`/accounts/${acctId}/games/${id}`);
-    setGame(data.game);
-    setGameId(id);
-    localStorage.setItem("gameId", id);
+  async function loadGame(gameId = selectedGameId) {
+    try {
+      setError("");
+      setMessage("");
+
+      const data = await api(`/accounts/${acctId}/games/${gameId}`);
+      const loadedGame = unwrapGame(data);
+
+      setGame(loadedGame);
+      setEditGameName(loadedGame.name || "");
+      setEditGameType(loadedGame.game || "");
+      rememberSelectedGame(getId(loadedGame) || gameId);
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   async function createGame() {
     try {
       setError("");
-      const data = await request(`/accounts/${acctId}/games`, {
+      setMessage("");
+
+      const data = await api(`/accounts/${acctId}/games`, {
+        token,
         method: "POST",
-        body: JSON.stringify({
+        body: {
           name: newGameName,
-          game: "Custom",
-        }),
+          game: newGameType,
+        },
       });
 
       setNewGameName("");
+      setMessage("Game created.");
       await loadGames();
       await loadGame(data.gameId);
     } catch (err) {
@@ -60,59 +138,173 @@ function Settings() {
     }
   }
 
+  async function patchGame() {
+    try {
+      setError("");
+      setMessage("");
+
+      await api(`/accounts/${acctId}/games/${selectedGameId}`, {
+        token,
+        method: "PATCH",
+        body: {
+          name: editGameName,
+          game: editGameType,
+        },
+      });
+
+      setMessage("Game updated.");
+      await loadGames();
+      await loadGame();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function replaceGame() {
+    try {
+      setError("");
+      setMessage("");
+
+      await api(`/accounts/${acctId}/games/${selectedGameId}`, {
+        token,
+        method: "PUT",
+        body: {
+          name: editGameName,
+          game: editGameType,
+        },
+      });
+
+      setMessage("Game replaced and reset.");
+      await loadGames();
+      await loadGame();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function addPlayer() {
-    await request(`/accounts/${acctId}/games/${gameId}/players`, {
-      method: "POST",
-      body: JSON.stringify({ username: newPlayer }),
-    });
+    try {
+      setError("");
+      setMessage("");
 
-    setNewPlayer("");
-    await loadGame();
+      await api(`/accounts/${acctId}/games/${selectedGameId}/players`, {
+        token,
+        method: "POST",
+        body: { username: newPlayerName },
+      });
+
+      setNewPlayerName("");
+      setMessage("Player added.");
+      await loadGame();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
-  async function addBasicDie() {
-    await request(`/accounts/${acctId}/games/${gameId}/die`, {
-      method: "POST",
-      body: JSON.stringify({
-        dieName,
-        faceValues: [1, 2, 3, 4, 5, 6],
-        frequencyDist: [1, 1, 1, 1, 1, 1],
-        color: dieColor,
-      }),
-    });
+  async function addDie() {
+    try {
+      setError("");
+      setMessage("");
 
-    setDieName("");
-    await loadGame();
+      await api(`/accounts/${acctId}/games/${selectedGameId}/die`, {
+        token,
+        method: "POST",
+        body: {
+          dieName,
+          faceValues: parseNumberList(faceValues),
+          frequencyDist: parseNumberList(frequencyDist),
+          color: dieColor,
+        },
+      });
+
+      setDieName("");
+      setMessage("Die template added.");
+      await loadGame();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
-  useEffect(() => {
-    if (acctId) loadGames().catch((err) => setError(err.message));
-  }, []);
+  async function addDiceSet() {
+    try {
+      setError("");
+      setMessage("");
+
+      await api(`/accounts/${acctId}/games/${selectedGameId}/diceSet`, {
+        token,
+        method: "POST",
+        body: {
+          diceSetName,
+          dice: selectedDiceIds,
+          scoring,
+        },
+      });
+
+      setDiceSetName("");
+      setSelectedDiceIds([]);
+      setScoring("return $0");
+      setMessage("Dice set created.");
+      await loadGame();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function toggleDie(dieId) {
+    setSelectedDiceIds((current) =>
+      current.includes(dieId)
+        ? current.filter((id) => id !== dieId)
+        : [...current, dieId]
+    );
+  }
 
   return (
     <main className="appPage">
       <section className="pageHeader">
-        <div>
-          <p className="eyebrow">Game Setup</p>
-          <h1>Settings</h1>
-          <p className="muted">Create games, players, dice, and dice sets for rolling.</p>
-        </div>
+        <p className="eyebrow">Game Setup</p>
+        <h1>Settings</h1>
+        <p className="muted">Create games, players, die templates, and rollable dice sets.</p>
       </section>
 
       <section className="panelGrid">
         <div className="panel">
+          <h2>Session</h2>
+
+          <label>
+            Account ID
+            <input value={acctId} onChange={(event) => setAcctId(event.target.value)} />
+          </label>
+
+          <label>
+            Authorization Token
+            <input value={token} onChange={(event) => setToken(event.target.value)} />
+          </label>
+
+          <button className="secondaryButton" onClick={loadGames} disabled={!canUseAccount}>
+            Load Games
+          </button>
+        </div>
+
+        <div className="panel">
           <h2>Games</h2>
 
           <label>
-            New Game
-            <input value={newGameName} onChange={(e) => setNewGameName(e.target.value)} />
+            New Game Name
+            <input value={newGameName} onChange={(event) => setNewGameName(event.target.value)} />
           </label>
 
-          <button className="primaryButton" onClick={createGame}>Create Game</button>
+          <label>
+            Game Type
+            <input value={newGameType} onChange={(event) => setNewGameType(event.target.value)} />
+          </label>
+
+          <button className="primaryButton" onClick={createGame} disabled={!canUseDmRoutes || !newGameName}>
+            Create Game
+          </button>
 
           <div className="itemList">
             {games.map((item) => (
-              <button key={item._id} onClick={() => loadGame(item._id)}>
+              <button key={getId(item)} onClick={() => loadGame(getId(item))}>
                 {item.name}
               </button>
             ))}
@@ -120,52 +312,132 @@ function Settings() {
         </div>
 
         <div className="panel">
+          <h2>Edit Game</h2>
+
+          <label>
+            Selected Game ID
+            <input
+              value={selectedGameId}
+              onChange={(event) => rememberSelectedGame(event.target.value)}
+            />
+          </label>
+
+          <button className="secondaryButton" onClick={() => loadGame()} disabled={!canUseGameRoutes}>
+            Load Selected Game
+          </button>
+
+          <label>
+            Game Name
+            <input value={editGameName} onChange={(event) => setEditGameName(event.target.value)} />
+          </label>
+
+          <label>
+            Game Type
+            <input value={editGameType} onChange={(event) => setEditGameType(event.target.value)} />
+          </label>
+
+          <button className="secondaryButton" onClick={patchGame} disabled={!canUseDmRoutes || !selectedGameId}>
+            Save Changes
+          </button>
+
+          <button className="secondaryButton" onClick={replaceGame} disabled={!canUseDmRoutes || !selectedGameId}>
+            Replace and Reset
+          </button>
+        </div>
+
+        <div className="panel">
           <h2>Players</h2>
 
           <label>
             Player Name
-            <input value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} />
+            <input value={newPlayerName} onChange={(event) => setNewPlayerName(event.target.value)} />
           </label>
 
-          <button className="secondaryButton" onClick={addPlayer} disabled={!gameId}>
+          <button className="secondaryButton" onClick={addPlayer} disabled={!canUseDmRoutes || !selectedGameId}>
             Add Player
           </button>
 
           <div className="itemList">
             {game?.players?.map((player) => (
-              <span key={player._id}>{player.username}</span>
+              <span key={getId(player)}>{player.username}</span>
             ))}
           </div>
         </div>
 
         <div className="panel">
-          <h2>Dice</h2>
+          <h2>Die Templates</h2>
 
           <label>
             Die Name
-            <input value={dieName} onChange={(e) => setDieName(e.target.value)} />
+            <input value={dieName} onChange={(event) => setDieName(event.target.value)} />
+          </label>
+
+          <label>
+            Face Values
+            <input value={faceValues} onChange={(event) => setFaceValues(event.target.value)} />
+          </label>
+
+          <label>
+            Frequency Distribution
+            <input value={frequencyDist} onChange={(event) => setFrequencyDist(event.target.value)} />
           </label>
 
           <label>
             Color
-            <input type="color" value={dieColor} onChange={(e) => setDieColor(e.target.value)} />
+            <input type="color" value={dieColor} onChange={(event) => setDieColor(event.target.value)} />
           </label>
 
-          <button className="secondaryButton" onClick={addBasicDie} disabled={!gameId}>
-            Add d6
+          <button className="secondaryButton" onClick={addDie} disabled={!canUseDmRoutes || !selectedGameId}>
+            Add Die
           </button>
 
           <div className="diceTray">
             {game?.dice?.map((die) => (
-              <div className="dieTile" key={die._id} style={{ borderColor: die.color }}>
+              <button
+                key={getId(die)}
+                className={selectedDiceIds.includes(getId(die)) ? "dieTile selectedDie" : "dieTile"}
+                style={{ borderColor: die.color }}
+                onClick={() => toggleDie(getId(die))}
+              >
                 <span>{die.dieName}</span>
                 <strong>{die.faceValues.join(", ")}</strong>
-              </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2>Dice Sets</h2>
+
+          <label>
+            Dice Set Name
+            <input value={diceSetName} onChange={(event) => setDiceSetName(event.target.value)} />
+          </label>
+
+          <label>
+            Scoring Rule
+            <textarea value={scoring} onChange={(event) => setScoring(event.target.value)} />
+          </label>
+
+          <button
+            className="primaryButton"
+            onClick={addDiceSet}
+            disabled={!canUseDmRoutes || !selectedGameId || selectedDiceIds.length === 0}
+          >
+            Create Dice Set
+          </button>
+
+          <div className="itemList">
+            {game?.diceSets?.map((set) => (
+              <span key={getId(set)}>
+                {set.diceSetName}: {set.dice?.map((dieId) => diceById.get(dieId)?.dieName || dieId).join(", ")}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
+      {message && <p className="successText">{message}</p>}
       {error && <p className="errorText">{error}</p>}
     </main>
   );
