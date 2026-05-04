@@ -24,9 +24,17 @@
 const connectDB  = require("./config/database");
 const Account    = require("./models/accounts.model");
 
-//Express
+//Express + CORS
 const express   = require("express");
 const app = express();
+const cors = require("cors");
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 
 //STUFF THAT ISN'T FROM MONGOOSE SLIDES
