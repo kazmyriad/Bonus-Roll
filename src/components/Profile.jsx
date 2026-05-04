@@ -3,20 +3,18 @@ import "../styles.css";
 
 const API_BASE = "http://localhost:3000";
 
-function Profile() {
+function Profile({ session, setSession }) {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [acct, setAcct] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [acctId, setAcctId] = useState(localStorage.getItem("acctId") || "");
   const [error, setError] = useState("");
 
   async function request(path, options = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: token } : {}),
+        ...(session.token ? { Authorization: session.token } : {}),
       },
       ...options,
     });
@@ -37,11 +35,11 @@ function Profile() {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
-        setToken(data.token);
+        setSession({ ...session, token: data.token });
       }
 
       localStorage.setItem("acctId", data.acctId);
-      setAcctId(data.acctId);
+      setSession({ ...session, acctId: data.acctId });
 
       setAcct(data);
     } catch (err) {
@@ -52,7 +50,7 @@ function Profile() {
   async function loadProfile() {
     try {
       setError("");
-      const data = await request(`/accounts/${acctId}`);
+      const data = await request(`/accounts/${session.acctId}`);
       setAcct(data);
     } catch (err) {
       setError(err.message);
@@ -101,7 +99,7 @@ function Profile() {
 
           <label>
             Account ID
-            <input value={acctId} onChange={(e) => setAcctId(e.target.value)} />
+            <input value={session.acctId} onChange={(e) => setSession({ ...session, acctId: e.target.value })} />
           </label>
 
           <button className="secondaryButton" onClick={loadProfile}>

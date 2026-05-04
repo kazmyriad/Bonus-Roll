@@ -9,8 +9,8 @@ function App() {
   const activeLink = useSelector((state) => state.nav.activeLink);
 
   const [session, setSession] = useState({
-    acctId: "",
-    token: "",
+    acctId: localStorage.getItem("acctId") || "",
+    token: localStorage.getItem("token") || "",
     selectedGameId: "",
   });
 
@@ -18,12 +18,8 @@ function App() {
     <div>
       <NavBar />
       {activeLink === "roller" && <Roller session={session} />}
-      {activeLink === "settings" && (
-        <Settings session={session} setSession={setSession} />
-      )}
-      {activeLink === "profile" && (
-        <Profile session={session} setSession={setSession} />
-      )}
+      {activeLink === "settings" && <Settings session={session} setSession={setSession} />}
+      {activeLink === "profile" && <Profile session={session} setSession={setSession} />}
     </div>
   );
 }
