@@ -16,7 +16,6 @@ function App(){
     return(
         <div>
             <NavBar />
-            
             {activeLink === "roller" && <Roller />}
             {activeLink === "settings" && <Settings />}
             {activeLink === "profile" && <Profile />}
