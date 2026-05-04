@@ -87,6 +87,10 @@ function Settings({ session = {}, setSession }) {
   }
 
   async function loadGames() {
+    if(!token){
+      setError("You must be a DM in order to create a game");
+      return;
+    }
     try {
       setError("");
       setMessage("");
@@ -280,7 +284,7 @@ function Settings({ session = {}, setSession }) {
             <input value={token} onChange={(event) => setToken(event.target.value)} />
           </label>
 
-          <button className="secondaryButton" onClick={loadGames} disabled={!canUseAccount}>
+          <button className="secondaryButton" onClick={loadGames} disabled={!accId || !token}>
             Load Games
           </button>
         </div>

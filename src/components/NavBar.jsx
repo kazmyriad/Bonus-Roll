@@ -14,7 +14,6 @@ const links = [
 function NavBar(){
     const dispatch = useDispatch();
 
-    // const isOpen = useSelector((state)=> state.nav.isOpen);
     const activeLink = useSelector((state) => state.nav.activeLink);
 
      return (
