@@ -30,7 +30,12 @@ const app = express();
 const cors = require("cors");
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -203,7 +208,7 @@ app.delete("/accounts/:acctId", auth, async (req, res) => {
 
     if (!acct) { return res.status(404).json({ error: "Account not found" })} // i feel like we'll never get here due to the auth step unless something really went wrong
 
-    acct.deleteOne();
+    await acct.deleteOne();
     res.status(204).send();
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -909,24 +914,25 @@ app.post("/accounts/:acctId/games/:gameId/Roll", auth , async (req, res) => {
         return die.faceValues[i];
       });
 
-      let to_eval = diceSet.scoring;
-      for(let i = outcomes.length - 1; i >= 0; i--){
-        to_eval = to_eval.replaceAll(`$${i}`, JSON.stringify(outcomes[i]));
-      }
+      // let to_eval = diceSet.scoring;
+      // for(let i = outcomes.length - 1; i >= 0; i--){
+      //   to_eval = to_eval.replaceAll(`$${i}`, JSON.stringify(outcomes[i]));
+      // }
 
-      const score = new Function(to_eval)(); // run in a new Function to reduce scope so no global variables are accessed
+      // const score = new Function(to_eval)(); // run in a new Function to reduce scope so no global variables are accessed
 
-      diceSet.rollHistory.push({
-        outcomes: dice.map((die, i) => ({ id: die._id, die: die.dieName, outcome: outcomes[i]})),
-        score: score
-      })
+      // diceSet.rollHistory.push({
+      //   outcomes: dice.map((die, i) => ({ id: die._id, die: die.dieName, outcome: outcomes[i]})),
+      //   score: score
+      // })
 
       await acct.save();
 
       res.status(200).json({
       acctId: acct._id,
       gameId: game._id,
-      score: score,
+      outcomes: outcomes,
+      scoring: diceSet.scoring,
       diceSet: diceSet._id
     });
   } catch (err) {
@@ -936,8 +942,8 @@ app.post("/accounts/:acctId/games/:gameId/Roll", auth , async (req, res) => {
 
 async function startServer() {
   await connectDB();
-  app.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
-  });
+  app.listen(3000, "127.0.0.1", () => {
+  console.log("Server running on http://127.0.0.1:3000");
+});
 }
 startServer();
