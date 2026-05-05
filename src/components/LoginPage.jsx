@@ -1,41 +1,51 @@
 import {useState, useEffect, useMemo } from "react";
+import axios from "axios";
 import "../styles.css";
 
-const API_BASE = "http://127.0.0.1:3000";
+const api = axios.create({
+  baseURL: "http://127.0.0.1:3000",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+// Sets base string for axios requests
 
-async function apiRequest(path, options = {}) {
-  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
-  if (response.status === 204) return null;
+// async function apiRequest(path, options = {}) {
+//   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+//   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.error || `Request failed with status ${response.status}`);
-  }
-  return data;
-}
+//   if (response.status === 204) return null;
 
-function Message({ message }) {
-  if (!message) return null;
-  return <p className={`message ${message.type}`}>{message.text}</p>;
+//   const data = await response.json().catch(() => ({}));
+//   if (!response.ok) {
+//     throw new Error(data.error || `Request failed with status ${response.status}`);
+//   }
+//   return data;
+// }
+
+// function Message({ message }) {
+//   if (!message) return null;
+//   return <p className={`message ${message.type}`}>{message.text}</p>;
+// }
+
+function getErrorMessage(error) {
+  return error.response?.data?.error || error.message || "Request failed";
 }
 
 function LoginPage({ onLogin, onNavigate }) {
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [loginInfo, setLoginInfo] = useState({ username: "", password: "" });
   const [message, setMessage] = useState(null);
 
-  async function handleSubmit(event) {
+  async function login(event) {
     event.preventDefault();
+    // On slide 5, prevents browser from refreshing and effecting React states
     setMessage(null);
     try {
-      const data = await apiRequest("/accounts/login", {
-        method: "POST",
-        body: JSON.stringify(form),
-      });
-      onLogin(data);
+      const response = await api.post("/accounts/login", loginInfo);
+      onLogin(response.data);
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: getErrorMessage(error) });
     }
   }
 
@@ -44,12 +54,12 @@ function LoginPage({ onLogin, onNavigate }) {
       <section className="panel auth-panel">
         <h1>Bonus Roll</h1>
         <h2>DM Login</h2>
-        <form onSubmit={handleSubmit} className="stack">
+        <form onSubmit={login} className="stack">
           <label>
             Username
             <input
-              value={form.username}
-              onChange={(event) => setForm({ ...form, username: event.target.value })}
+              value={loginInfo.username}
+              onChange={(event) => setLoginInfo({ ...loginInfo, username: event.target.value })}
               required
             />
           </label>
@@ -57,14 +67,13 @@ function LoginPage({ onLogin, onNavigate }) {
             Password
             <input
               type="password"
-              value={form.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              value={loginInfo.password}
+              onChange={(event) => setLoginInfo({ ...loginInfo, password: event.target.value })}
               required
             />
           </label>
           <button type="submit">Log In</button>
         </form>
-        <Message message={message} />
         <button className="text-button" onClick={() => onNavigate("create")}>
           Create a DM account
         </button>

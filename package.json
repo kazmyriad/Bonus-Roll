@@ -20,6 +20,7 @@
   "homepage": "https://github.com/kazmyriad/Bonus-Roll#readme",
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
+    "axios": "^1.16.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
