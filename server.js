@@ -29,6 +29,7 @@ const express   = require("express");
 const app = express();
 const cors = require("cors");
 
+// Some of these are for Karis (MAC)
 app.use(cors({
   origin: [
     "http://localhost:5173",
