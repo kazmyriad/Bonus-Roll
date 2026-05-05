@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "http://127.0.0.1:3000";
 
 function toId(value) {
   if (!value) return "";
@@ -209,7 +209,7 @@ function ManageGamesPage({ session, onLogout }) {
   const [diceSetForm, setDiceSetForm] = useState({
     diceSetName: "",
     dice: "",
-    scoring: "return $0",
+    scoring: "Scoring instructions",
   });
   const [activation, setActivation] = useState({ activePlayerId: "", activeDiceSetId: "" });
   const [message, setMessage] = useState(null);
@@ -405,6 +405,11 @@ function ManageGamesPage({ session, onLogout }) {
     }
   }
 
+  async function copyPlayerLink(link) {
+    if (!activeGame) return;
+    navigator.clipboard.writeText(link);
+  }
+
   async function deletePlayer(player) {
     if (!activeGame || !window.confirm(`Remove ${player.username}?`)) return;
     setMessage(null);
@@ -463,33 +468,9 @@ function ManageGamesPage({ session, onLogout }) {
     }
   }
 
-  async function replaceDie(die) {
+  async function copyDieID(die) {
     if (!activeGame) return;
-    const dieName = window.prompt("Die name", die.dieName);
-    if (!dieName) return;
-    const faceValues = window.prompt("Face values", (die.faceValues || []).join(","));
-    if (!faceValues) return;
-    const frequencyDist = window.prompt("Frequency distribution", (die.frequencyDist || []).join(","));
-    if (!frequencyDist) return;
-    const color = window.prompt("Color", die.color);
-    if (!color) return;
-    setMessage(null);
-    try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`, {
-        method: "PUT",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({
-          dieName,
-          faceValues: parseListInput(faceValues),
-          frequencyDist: parseListInput(frequencyDist).map(Number),
-          color,
-        }),
-      });
-      await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Die replaced." });
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+    navigator.clipboard.writeText(die.dieId);
   }
 
   async function deleteDie(die) {
@@ -508,6 +489,7 @@ function ManageGamesPage({ session, onLogout }) {
   }
 
   async function createDiceSet(event) {
+    console.log("Creating dice set with form data:", diceSetForm);
     event.preventDefault();
     if (!activeGame) return;
     setMessage(null);
@@ -521,7 +503,7 @@ function ManageGamesPage({ session, onLogout }) {
           scoring: diceSetForm.scoring,
         }),
       });
-      setDiceSetForm({ diceSetName: "", dice: "", scoring: "return $0" });
+      setDiceSetForm({ diceSetName: "", dice: "", scoring: "Scoring instructions" });
       await refreshGame(activeGame.gameId);
       setMessage({ type: "success", text: "Dice set created." });
     } catch (error) {
@@ -530,24 +512,6 @@ function ManageGamesPage({ session, onLogout }) {
   }
 
   async function patchDiceSet(diceSet) {
-    if (!activeGame) return;
-    const diceSetName = window.prompt("Dice set name", diceSet.diceSetName);
-    if (!diceSetName) return;
-    setMessage(null);
-    try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`, {
-        method: "PATCH",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ diceSetName }),
-      });
-      await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Dice set updated." });
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
-  }
-
-  async function replaceDiceSet(diceSet) {
     if (!activeGame) return;
     const diceSetName = window.prompt("Dice set name", diceSet.diceSetName);
     if (!diceSetName) return;
@@ -700,7 +664,7 @@ function ManageGamesPage({ session, onLogout }) {
                     <input readOnly value={playerLink(session.acctId, activeGame.gameId, player.playerId)} onFocus={(event) => event.target.select()} />
                     <div className="button-row">
                       <button className="secondary" onClick={() => renamePlayer(player)}>Rename</button>
-                      <button className="secondary" onClick={() => replacePlayer(player)}>Replace</button>
+                      <button className="secondary" onClick={() => copyPlayerLink(playerLink(session.acctId, activeGame.gameId, player.playerId))}>Copy Link</button>
                       <button className="danger" onClick={() => deletePlayer(player)}>Remove</button>
                     </div>
                   </div>
@@ -755,7 +719,7 @@ function ManageGamesPage({ session, onLogout }) {
                     <small>{die.dieId}</small>
                     <div className="button-row">
                       <button className="secondary" onClick={() => patchDie(die)}>Edit</button>
-                      <button className="secondary" onClick={() => replaceDie(die)}>Replace</button>
+                      <button className="secondary" onClick={() => copyDieID(die)}>Copy ID</button>
                       <button className="danger" onClick={() => deleteDie(die)}>Delete</button>
                     </div>
                   </div>
@@ -784,7 +748,6 @@ function ManageGamesPage({ session, onLogout }) {
                     <small>{(diceSet.dice || []).join(", ")}</small>
                     <div className="button-row">
                       <button className="secondary" onClick={() => patchDiceSet(diceSet)}>Edit</button>
-                      <button className="secondary" onClick={() => replaceDiceSet(diceSet)}>Replace</button>
                       <button className="danger" onClick={() => deleteDiceSet(diceSet)}>Delete</button>
                     </div>
                   </div>
@@ -803,6 +766,7 @@ function PlayerPage({ params }) {
   const [player, setPlayer] = useState(null);
   const [message, setMessage] = useState(null);
   const [roll, setRoll] = useState(null);
+  const [rollInstructions, setRollInstructions] = useState(null);
 
   async function loadPlayerPage() {
     const [gameData, playerData] = await Promise.all([
@@ -820,12 +784,14 @@ function PlayerPage({ params }) {
   async function rollDice() {
     setMessage(null);
     setRoll(null);
+    let outcomes = [];
     try {
       const data = await apiRequest(`/accounts/${params.acctId}/games/${params.gameId}/Roll`, {
         method: "POST",
         headers: authHeaders(localStorage.getItem("token") || ""),
         body: JSON.stringify({ from: params.playerId, playerId: params.playerId }),
       });
+      console.log("Roll response data:", data.outcomes);
       setRoll(data);
       await loadPlayerPage();
     } catch (error) {
@@ -845,13 +811,13 @@ function PlayerPage({ params }) {
         <Message message={message} />
         <div className="roll-box">
           <p>{activeForPlayer ? "You are up." : "Waiting for the DM to arm your roll."}</p>
-          <p className="muted">{activeDiceSet ? activeDiceSet.diceSetName : "No dice set active."}</p>
+          <p className="muted">{activeDiceSet ? activeDiceSet.diceSetName + ": " + activeDiceSet.scoring : "No dice set active."}</p>
           <button onClick={rollDice} disabled={!activeForPlayer || !activeDiceSet}>Roll</button>
         </div>
         {roll && (
           <div className="result">
             <span>Result</span>
-            <strong>{roll.score}</strong>
+            <strong>{roll.outcomes}</strong>
           </div>
         )}
       </section>
