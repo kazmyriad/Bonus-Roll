@@ -784,14 +784,13 @@ function PlayerPage({ params }) {
   async function rollDice() {
     setMessage(null);
     setRoll(null);
-    let outcomes = [];
     try {
       const data = await apiRequest(`/accounts/${params.acctId}/games/${params.gameId}/Roll`, {
         method: "POST",
         headers: authHeaders(localStorage.getItem("token") || ""),
         body: JSON.stringify({ from: params.playerId, playerId: params.playerId }),
       });
-      console.log("Roll response data:", data.outcomes);
+      console.log("Roll response data:", data);
       setRoll(data);
       await loadPlayerPage();
     } catch (error) {
@@ -818,6 +817,7 @@ function PlayerPage({ params }) {
           <div className="result">
             <span>Result</span>
             <strong>{roll.outcomes}</strong>
+            <span>{roll.scoring}</span>
           </div>
         )}
       </section>

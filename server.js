@@ -45,6 +45,7 @@ app.use(express.json());
 //STUFF THAT ISN'T FROM MONGOOSE SLIDES
 const bcrypt = require("bcrypt"); // for hashing passwords for the database
 const jwt = require("jsonwebtoken"); // for login/tokens
+const { constants } = require("node:buffer");
 
 // for web token for login
 const JWT_PRIVATE_KEY = "blahblahbblahblah a random hardcoded jsonwebtoken private key if this weren't a classroom project i'd be doing something a little more secure...";
@@ -914,6 +915,8 @@ app.post("/accounts/:acctId/games/:gameId/Roll", auth , async (req, res) => {
         return die.faceValues[i];
       });
 
+      const outcomeList = outcomes.join(", ");
+
       // let to_eval = diceSet.scoring;
       // for(let i = outcomes.length - 1; i >= 0; i--){
       //   to_eval = to_eval.replaceAll(`$${i}`, JSON.stringify(outcomes[i]));
@@ -931,7 +934,7 @@ app.post("/accounts/:acctId/games/:gameId/Roll", auth , async (req, res) => {
       res.status(200).json({
       acctId: acct._id,
       gameId: game._id,
-      outcomes: outcomes,
+      outcomes: outcomeList,
       scoring: diceSet.scoring,
       diceSet: diceSet._id
     });
