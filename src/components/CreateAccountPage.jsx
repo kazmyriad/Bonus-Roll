@@ -63,7 +63,7 @@ function CreateAccountPage({ onCreate, onNavigate }) {
           </label>
           <button type="submit">Create Account</button>
         </form>
-        <Message message={message} />
+        {/* <Message message={message} /> */}
         <button className="text-button" onClick={() => onNavigate("login")}>
           Back to login
         </button>
