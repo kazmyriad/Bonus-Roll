@@ -11,26 +11,8 @@ const api = axios.create({
 // Sets base string for axios requests
 
 
-// async function apiRequest(path, options = {}) {
-//   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-//   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
-
-//   if (response.status === 204) return null;
-
-//   const data = await response.json().catch(() => ({}));
-//   if (!response.ok) {
-//     throw new Error(data.error || `Request failed with status ${response.status}`);
-//   }
-//   return data;
-// }
-
-// function Message({ message }) {
-//   if (!message) return null;
-//   return <p className={`message ${message.type}`}>{message.text}</p>;
-// }
-
 function getErrorMessage(error) {
-  return error.response?.data?.error || error.message || "Request failed";
+  return "Request failed:" + error.message;
 }
 
 function LoginPage({ onLogin, onNavigate }) {
