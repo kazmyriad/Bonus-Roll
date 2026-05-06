@@ -548,7 +548,6 @@ function ManageGamesPage({ session, onLogout }) {
               <input value={dieForm.dieName} onChange={(event) => setDieForm({ ...dieForm, dieName: event.target.value })} placeholder="Die name" required />
               <input value={dieForm.faceValues} onChange={(event) => setDieForm({ ...dieForm, faceValues: event.target.value })} placeholder="Face values" required />
               <input value={dieForm.frequencyDist} onChange={(event) => setDieForm({ ...dieForm, frequencyDist: event.target.value })} placeholder="Frequency distribution" required />
-              <input value={dieForm.color} onChange={(event) => setDieForm({ ...dieForm, color: event.target.value })} placeholder="Color" required />
               <button type="submit">Create Die</button>
             </form>
             <div className="list compact-list">
