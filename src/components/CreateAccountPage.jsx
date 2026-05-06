@@ -10,17 +10,18 @@ const api = axios.create({
 });
 // Sets base string for axios requests
 
-function CreateAccountPage({ onNavigate }) {
+function CreateAccountPage({ onLogin, onNavigate }) {
   const [loginInfo, setLoginInfo] = useState({ username: "", password: "" });
 
   async function createAccount(event) {
     event.preventDefault();
     // On slide 5, prevents browser from refreshing and effecting React states
     try {
-        await api.post("/accounts", loginInfo);
-        const login = await api.post("/accounts/login", loginInfo);
+      await api.post("/accounts", loginInfo);
+      const login = await api.post("/accounts/login", loginInfo);
+      onLogin(login.data);
     } catch (error) {
-        console.log(error);
+      console.error("Create account failed:", error);
     }
   }
 

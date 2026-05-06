@@ -44,10 +44,10 @@ function getId(item, documentedKey) {
 //   return { ...die, dieId: getId(die, "dieId") };
 // }
 
-// function normalizeDiceSet(diceSet) {
-//   if (!diceSet) return null;
-//   return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
-// }
+function normalizeDiceSet(diceSet) {
+  if (!diceSet) return null;
+  return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
+}
 
 function authHeaders(token) {
   return token ? { Authorization: token } : {};
@@ -132,7 +132,7 @@ function PlayerPage({ params, token }) {
   }
 
   const activeForPlayer = game?.activePlayerId === params.playerId;
-  const activeDiceSet = game?.diceSets.map(normalizeDiceSet).find((set) => set.diceSetId === game.activeDiceSetId);
+  const activeDiceSet = game?.diceSets?.map(normalizeDiceSet).find((set) => set.diceSetId === game.activeDiceSetId);
 
   return (
     <main className="app-shell player-shell">

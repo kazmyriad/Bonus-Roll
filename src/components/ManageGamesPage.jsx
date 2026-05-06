@@ -10,106 +10,77 @@ const api = axios.create({
 });
 // Sets base string for axios requests
 
-// const API_BASE = "http://127.0.0.1:3000";
+const API_BASE = "http://127.0.0.1:3000";
 
-// function toId(value) {
-//   if (!value) return "";
-//   return String(value);
-// }
+function toId(value) {
+  if (!value) return "";
+  return String(value);
+}
 
-// function getId(item, documentedKey) {
-//   return toId(item?.[documentedKey] || item?._id || item?.id);
-// }
+function getId(item, documentedKey) {
+  return toId(item?.[documentedKey] || item?._id || item?.id);
+}
 
-// function normalizeGame(game) {
-//   if (!game) return null;
-//   return {
-//     ...game,
-//     gameId: getId(game, "gameId"),
-//     activePlayerId: toId(game.activePlayerId),
-//     activeDiceSetId: toId(game.activeDiceSetId),
-//     name: game.name || "Untitled game",
-//     game: game.game || "Unknown system",
-//     players: (game.players || []).map(normalizePlayer),
-//     dice: (game.dice || game.die || []).map(normalizeDie),
-//     diceSets: (game.diceSets || []).map(normalizeDiceSet),
-//   };
-// }
+function normalizeGame(game) {
+  if (!game) return null;
+  return {
+    ...game,
+    gameId: getId(game, "gameId"),
+    activePlayerId: toId(game.activePlayerId),
+    activeDiceSetId: toId(game.activeDiceSetId),
+    name: game.name || "Untitled game",
+    game: game.game || "Unknown system",
+    players: (game.players || []).map(normalizePlayer),
+    dice: (game.dice || game.die || []).map(normalizeDie),
+    diceSets: (game.diceSets || []).map(normalizeDiceSet),
+  };
+}
 
-// function normalizePlayer(player) {
-//   if (!player) return null;
-//   return { ...player, playerId: getId(player, "playerId") };
-// }
+function normalizePlayer(player) {
+  if (!player) return null;
+  return { ...player, playerId: getId(player, "playerId") };
+}
 
-// function normalizeDie(die) {
-//   if (!die) return null;
-//   return { ...die, dieId: getId(die, "dieId") };
-// }
+function normalizeDie(die) {
+  if (!die) return null;
+  return { ...die, dieId: getId(die, "dieId") };
+}
 
-// function normalizeDiceSet(diceSet) {
-//   if (!diceSet) return null;
-//   return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
-// }
-
-// async function apiRequest(path, options = {}) {
-//   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-//   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
-
-//   if (response.status === 204) return null;
-
-//   const data = await response.json().catch(() => ({}));
-//   if (!response.ok) {
-//     throw new Error(data.error || `Request failed with status ${response.status}`);
-//   }
-//   return data;
-// }
-
-// function authHeaders(token) {
-//   return token ? { Authorization: token } : {};
-// }
-
-// function playerLink(acctId, gameId, playerId) {
-//   const url = new URL(window.location.href);
-//   url.search = new URLSearchParams({
-//     page: "player",
-//     acctId,
-//     gameId,
-//     playerId,
-//   }).toString();
-//   return url.toString();
-// }
-
-// function parseListInput(value) {
-//   return value
-//     .split(",")
-//     .map((item) => item.trim())
-//     .filter(Boolean)
-//     .map((item) => {
-//       const numeric = Number(item);
-//       return Number.isNaN(numeric) ? item : numeric;
-//     });
-// }
-
-// function Message({ message }) {
-//   if (!message) return null;
-//   return <p className={`message ${message.type}`}>{message.text}</p>;
-// }
-
-//// Functions copied from above, code below may depend on them for now
+function normalizeDiceSet(diceSet) {
+  if (!diceSet) return null;
+  return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
+}
 
 function authHeaders(token) {
   return token ? { Authorization: token } : {};
 }
 
-// function getId(item, documentedKey) {
-//   return toId(item?.[documentedKey] || item?._id || item?.id);
-// }
+function playerLink(acctId, gameId, playerId) {
+  const url = new URL(window.location.href);
+  url.search = new URLSearchParams({
+    page: "player",
+    acctId,
+    gameId,
+    playerId,
+  }).toString();
+  return url.toString();
+}
 
-// function toId(value) {
-//   if (!value) return "";
-//   return String(value);
-// }
+function parseListInput(value) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const numeric = Number(item);
+      return Number.isNaN(numeric) ? item : numeric;
+    });
+}
 
+function Message({ message }) {
+  if (!message) return null;
+  return <p className={`message ${message.type}`}>{message.text}</p>;
+}
 
 function ManageGamesPage({ session, onLogout }) {
   const [games, setGames] = useState([]);
@@ -128,6 +99,7 @@ function ManageGamesPage({ session, onLogout }) {
     dice: "",
     scoring: "Scoring instructions",
   });
+  
   const [activation, setActivation] = useState({ activePlayerId: "", activeDiceSetId: "" });
   const activeGame = useMemo(
     () => games.find((game) => game.gameId === activeGameId) || games[0] || null,
@@ -135,7 +107,8 @@ function ManageGamesPage({ session, onLogout }) {
   );
 
   async function loadGames(preferredGameId = "") {
-    const data = await apiRequest(`/accounts/${session.acctId}/games`);
+    const response = await api.get(`/accounts/${session.acctId}/games`);
+    const data = response.data;
     const nextGames = (data.games || []).map(normalizeGame);
     setGames(nextGames);
     setActiveGameId((current) => {
@@ -151,7 +124,8 @@ function ManageGamesPage({ session, onLogout }) {
 
   async function refreshGame(gameId = activeGame?.gameId) {
     if (!gameId) return;
-    const data = await apiRequest(`/accounts/${session.acctId}/games/${gameId}`);
+    const response = await api.get(`/accounts/${session.acctId}/games/${gameId}`);
+    const data = response.data;
     const nextGame = normalizeGame(data.game || data);
     if (!nextGame?.gameId) {
       await loadGames(gameId);
@@ -166,70 +140,54 @@ function ManageGamesPage({ session, onLogout }) {
     if (accountForm.username) body.username = accountForm.username;
     if (accountForm.password) body.password = accountForm.password;
 
+    if (!Object.keys(body).length) return;
+
     try {
-      await apiRequest(`/accounts/${session.acctId}`, {
-        method: "PATCH",
+      await api.patch(`/accounts/${session.acctId}`, body, {
         headers: authHeaders(session.token),
-        body: JSON.stringify(body),
       });
       setAccountForm({ username: "", password: "" });
     } catch (error) {
-      console.log("");
+      console.error("Update account failed:", error);
     }
   }
 
   async function deleteAccount() {
     if (!window.confirm("Delete this DM account and all games?")) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}`, {
-        method: "DELETE",
+      await api.delete(`/accounts/${session.acctId}`, {
         headers: authHeaders(session.token),
       });
       onLogout();
     } catch (error) {
-        console.log("");
-        }
+      console.error("Delete account failed:", error);
+    }
   }
 
   async function createGame(event) {
     event.preventDefault();
     try {
-      const obj = await api.post(`/accounts/${session.acctId}/games`, gameForm, { headers: authHeaders(session.token) });
-      console.log("Create game response data:", obj.data);
-      const createdGameId = obj.data.gameId;
+      const response = await api.post(`/accounts/${session.acctId}/games`, gameForm, {
+        headers: authHeaders(session.token),
+      });
+      const createdGameId = response.data.game?.gameId || response.data.gameId;
+      setGameForm({ name: "", game: "" });
       await loadGames(createdGameId);
     } catch (error) {
-      console.log(error.message);
+      console.error("Create game failed:", error);
     }
-
-    // try {
-    //   const data = await apiRequest(`/accounts/${session.acctId}/games`, {
-    //     method: "POST",
-    //     headers: authHeaders(session.token),
-    //     body: JSON.stringify(gameForm),
-    //   });
-    //   const createdGameId = getId(data.game || data, "gameId");
-    //   await loadGames(createdGameId);
-    //   setGameForm({ name: "", game: "" });
-    //   setMessage({ type: "success", text: "Game created." });
-    // } catch (error) {
-    //   setMessage({ type: "error", text: error.message });
-    // }
   }
 
   async function deleteGame(gameId) {
     if (!window.confirm("Delete this game and all of its players, dice, and dice sets?")) return;
-    // setMessage(null);
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${gameId}`, {
-        method: "DELETE",
+      await api.delete(`/accounts/${session.acctId}/games/${gameId}`, {
         headers: authHeaders(session.token),
       });
       setGames((current) => current.filter((game) => game.gameId !== gameId));
       setActiveGameId("");
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Delete game failed:", error);
     }
   }
 
@@ -240,15 +198,14 @@ function ManageGamesPage({ session, onLogout }) {
     if (!system) return;
 
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${game.gameId}`, {
-        method: "PATCH",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ name, game: system }),
-      });
+      await api.patch(
+        `/accounts/${session.acctId}/games/${game.gameId}`,
+        { name, game: system },
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(game.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Patch game failed:", error);
     }
   }
 
@@ -259,15 +216,14 @@ function ManageGamesPage({ session, onLogout }) {
     const system = window.prompt("Game system", game.game);
     if (!system) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${game.gameId}`, {
-        method: "PUT",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ name, game: system }),
-      });
+      await api.put(
+        `/accounts/${session.acctId}/games/${game.gameId}`,
+        { name, game: system },
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(game.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Replace game failed:", error);
     }
   }
 
@@ -275,16 +231,15 @@ function ManageGamesPage({ session, onLogout }) {
     event.preventDefault();
     if (!activeGame) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players`, {
-        method: "POST",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ username: playerName }),
-      });
+      await api.post(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/players`,
+        { username: playerName },
+        { headers: authHeaders(session.token) },
+      );
       setPlayerName("");
       await loadGames(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Create player failed:", error);
     }
   }
 
@@ -293,15 +248,14 @@ function ManageGamesPage({ session, onLogout }) {
     const username = window.prompt("Player name", player.username);
     if (!username) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
-        method: "PATCH",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ username }),
-      });
+      await api.patch(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`,
+        { username },
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(activeGame.gameId);
-     console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Rename player failed:", error);
     }
   }
 
@@ -310,34 +264,26 @@ function ManageGamesPage({ session, onLogout }) {
     const username = window.prompt("Replacement player name", player.username);
     if (!username) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
-        method: "PUT",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ username }),
-      });
+      await api.put(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`,
+        { username },
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Replace player failed:", error);
     }
-  }
-
-  async function copyPlayerLink(link) {
-    if (!activeGame) return;
-    navigator.clipboard.writeText(link);
   }
 
   async function deletePlayer(player) {
     if (!activeGame || !window.confirm(`Remove ${player.username}?`)) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
-        method: "DELETE",
+      await api.delete(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
         headers: authHeaders(session.token),
       });
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Delete player failed:", error);
     }
   }
 
@@ -345,21 +291,20 @@ function ManageGamesPage({ session, onLogout }) {
     event.preventDefault();
     if (!activeGame) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die`, {
-        method: "POST",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({
+      await api.post(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/die`,
+        {
           dieName: dieForm.dieName,
           faceValues: parseListInput(dieForm.faceValues),
           frequencyDist: parseListInput(dieForm.frequencyDist).map(Number),
           color: dieForm.color,
-        }),
-      });
+        },
+        { headers: authHeaders(session.token) },
+      );
       setDieForm({ dieName: "", faceValues: "1,2,3,4,5,6", frequencyDist: "1,1,1,1,1,1", color: "blue" });
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Create die failed:", error);
     }
   }
 
@@ -370,57 +315,47 @@ function ManageGamesPage({ session, onLogout }) {
     const color = window.prompt("Color", die.color);
     if (!color) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`, {
-        method: "PATCH",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ dieName, color }),
-      });
+      await api.patch(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`,
+        { dieName, color },
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Patch die failed:", error);
     }
-  }
-
-  async function copyDieID(die) {
-    if (!activeGame) return;
-    navigator.clipboard.writeText(die.dieId);
   }
 
   async function deleteDie(die) {
     if (!activeGame || !window.confirm(`Delete ${die.dieName}?`)) return;
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`, {
-        method: "DELETE",
+      await api.delete(`/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`, {
         headers: authHeaders(session.token),
       });
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Delete die failed:", error);
     }
   }
 
   async function createDiceSet(event) {
-    console.log("Creating dice set with form data:", diceSetForm);
     event.preventDefault();
     if (!activeGame) return;
 
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet`, {
-        method: "POST",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({
+      await api.post(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet`,
+        {
           diceSetName: diceSetForm.diceSetName,
           dice: parseListInput(diceSetForm.dice),
           scoring: diceSetForm.scoring,
-        }),
-      });
+        },
+        { headers: authHeaders(session.token) },
+      );
       setDiceSetForm({ diceSetName: "", dice: "", scoring: "Scoring instructions" });
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Create dice set failed:", error);
     }
   }
 
@@ -432,49 +367,45 @@ function ManageGamesPage({ session, onLogout }) {
     if (!dice) return;
     const scoring = window.prompt("Scoring", diceSet.scoring);
     if (!scoring) return;
-    
+
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`, {
-        method: "PUT",
-        headers: authHeaders(session.token),
-        body: JSON.stringify({ diceSetName, dice: parseListInput(dice), scoring }),
-      });
+      await api.put(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`,
+        { diceSetName, dice: parseListInput(dice), scoring },
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Patch dice set failed:", error);
     }
   }
 
   async function deleteDiceSet(diceSet) {
     if (!activeGame || !window.confirm(`Delete ${diceSet.diceSetName}?`)) return;
-    
+
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`, {
-        method: "DELETE",
+      await api.delete(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`, {
         headers: authHeaders(session.token),
       });
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Delete dice set failed:", error);
     }
   }
 
   async function setActiveRoll(event) {
     event.preventDefault();
     if (!activeGame) return;
-    
+
     try {
-      await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}`, {
-        method: "PATCH",
-        headers: authHeaders(session.token),
-        body: JSON.stringify(activation),
-      });
+      await api.patch(
+        `/accounts/${session.acctId}/games/${activeGame.gameId}`,
+        activation,
+        { headers: authHeaders(session.token) },
+      );
       await refreshGame(activeGame.gameId);
-      console.log("");
     } catch (error) {
-      console.log("");
+      console.error("Set active roll failed:", error);
     }
   }
 
@@ -576,7 +507,6 @@ function ManageGamesPage({ session, onLogout }) {
                     </div>
                     <input readOnly value={playerLink(session.acctId, activeGame.gameId, player.playerId)} onFocus={(event) => event.target.select()} />
                     <div className="button-row">
-                      <button className="secondary" onClick={() => renamePlayer(player)}>Rename</button>
                       <button className="secondary" onClick={() => copyPlayerLink(playerLink(session.acctId, activeGame.gameId, player.playerId))}>Copy Link</button>
                       <button className="danger" onClick={() => deletePlayer(player)}>Remove</button>
                     </div>

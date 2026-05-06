@@ -30,23 +30,23 @@ function App() {
     const storedToken = localStorage.getItem("token");
     const storedAcctId = localStorage.getItem("acctId");
     if (storedToken && storedAcctId) {
-      axios.get(`/accounts/${storedAcctId}`, {
-        headers: { Authorization: storedToken }
+      api.get(`/accounts/${storedAcctId}`, {
+        headers: { Authorization: storedToken },
       })
       .then((response) => {
-        if (response.status === 200){
+        if (response.status === 200) {
           setToken(storedToken);
           setAcctId(storedAcctId);
-          setSession("manage")
-        }
-        else{
+          setSession("manage");
+        } else {
           console.log("Invalid Token");
-        }})
-        .catch(() =>{
-          localStorage.removeItem("token");
-          localStorage.removeItem("acctId");
-          setSession("login");
-        })
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("acctId");
+        setSession("login");
+      });
     }
   }, []);
   // sets token once
