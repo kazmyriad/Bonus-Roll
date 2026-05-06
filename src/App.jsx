@@ -31,10 +31,10 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const page = params.get("page");
 
-  if (page === "player") {
-    setSession("player");
-    return;
-  } 
+    if (page === "player") {
+      setSession("player");
+      return;
+    } 
     const storedToken = localStorage.getItem("token");
     const storedAcctId = localStorage.getItem("acctId");
     if (storedToken && storedAcctId) {

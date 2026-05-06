@@ -21,6 +21,8 @@ function getId(item, documentedKey) {
   return toId(item?.[documentedKey] || item?._id || item?.id);
 }
 
+// <---- NORMALIZING FUNCTIONS (backend doesn't always return same params)
+
 function normalizeGame(game) {
   if (!game) return null;
   return {
