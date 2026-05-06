@@ -13,7 +13,6 @@ const api = axios.create({
 
 function CreateAccountPage({ onCreate, onNavigate }) {
   const [loginInfo, setLoginInfo] = useState({ username: "", password: "" });
-  const [message, setMessage] = useState(null);
 
   async function createAccount(event) {
     event.preventDefault();
@@ -25,7 +24,7 @@ function CreateAccountPage({ onCreate, onNavigate }) {
         const login = await api.post("/accounts/login", loginInfo);
         onCreate(login.data);
     } catch (error) {
-        setMessage({ type: "error", text: error.message });
+        console.log(error);
     }
   }
 

@@ -17,7 +17,6 @@ function getErrorMessage(error) {
 
 function LoginPage({ onLogin, onNavigate }) {
   const [loginInfo, setLoginInfo] = useState({ username: "", password: "" });
-  const [message, setMessage] = useState(null);
 
   async function login(event) {
     event.preventDefault();
@@ -27,7 +26,7 @@ function LoginPage({ onLogin, onNavigate }) {
       const response = await api.post("/accounts/login", loginInfo);
       onLogin(response.data);
     } catch (error) {
-      setMessage({ type: "error", text: getErrorMessage(error) });
+        console.log(error);
     }
   }
 

@@ -18,7 +18,7 @@ function App() {
 
   //might be best to pass acc ID along with token as a state (object)
   //kind of already wrote it out and am lazy though
-  
+
 // <---- GRABBING AUTH TOKENSs ---->
   useEffect(()=> {
     const storedToken = localStorage.getItem("token");
@@ -33,6 +33,7 @@ function App() {
       localStorage.setItem("token", token);
     } else {
       localStorage.removeItem("token");
+      setSession("login");
     }
   }, [token]);
   // updates when token changes
@@ -49,6 +50,7 @@ function App() {
     setSession("login");
   }
 
+  // Not in the notes but: if session = this, display this page and pass these props
   return(
     <>
       {session === "login" && <LoginPage onLogin={initializeSession} onNavigate={setSession} />}
