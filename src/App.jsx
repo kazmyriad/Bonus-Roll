@@ -26,7 +26,15 @@ function App() {
   //kind of already wrote it out and am lazy though
 
 // <---- GRABBING AUTH TOKENSs ---->
+
   useEffect(()=> {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get("page");
+
+  if (page === "player") {
+    setSession("player");
+    return;
+  } 
     const storedToken = localStorage.getItem("token");
     const storedAcctId = localStorage.getItem("acctId");
     if (storedToken && storedAcctId) {
@@ -59,7 +67,6 @@ function App() {
     } else {
       localStorage.removeItem("token");
       localStorage.removeItem("acctId");
-      setSession("login");
     }
   }, [token, acctId]);
   // updates when token changes
@@ -82,7 +89,7 @@ function App() {
       {session === "login" && <LoginPage onLogin={initializeSession} onNavigate={setSession} />}
       {session === "create" && <CreateAccountPage onLogin={initializeSession} onNavigate={setSession} />}
       {session === "manage" && token && acctId && <ManageGamesPage session={{ acctId, token }} onLogout={logOut} />}
-      {session === "player" && token && <PlayerPage token={token} />}
+      {session === "player" && <PlayerPage token={token} />}
     </>
   )
     

@@ -1,16 +1,2 @@
 Unused endpoints that need a home:
 
-GET /accounts/acctId (get acc info)
-
-GET /accounts/:acctId/games/:gameId/players (Get all players in game)
-
-GET /accounts/:acctId/games/:gameId/die (Get all dice in game)
-
-GET/accounts/:acctId/games/:gameId/die/:dieId (Get a single die)
-
-GET /accounts/:acctId/games/:gameId/diceSet (Get all dice sets in a game)
-
-Get /accounts/:acctId/games/:gameId/diceSet/:diceSetId (Get a single dice set)
-
-
-ManageGamesPage fetches entire game from Get/accounts/:acctId/games/:gameId, fetch above independent of this

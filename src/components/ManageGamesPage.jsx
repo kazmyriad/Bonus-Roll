@@ -99,7 +99,7 @@ function ManageGamesPage({ session, onLogout }) {
     dice: "",
     scoring: "Scoring instructions",
   });
-  
+
   const [activation, setActivation] = useState({ activePlayerId: "", activeDiceSetId: "" });
   const activeGame = useMemo(
     () => games.find((game) => game.gameId === activeGameId) || games[0] || null,
@@ -507,7 +507,7 @@ function ManageGamesPage({ session, onLogout }) {
                     </div>
                     <input readOnly value={playerLink(session.acctId, activeGame.gameId, player.playerId)} onFocus={(event) => event.target.select()} />
                     <div className="button-row">
-                      <button className="secondary" onClick={() => copyPlayerLink(playerLink(session.acctId, activeGame.gameId, player.playerId))}>Copy Link</button>
+                      {/* <button className="secondary" onClick={() => copyPlayerLink(playerLink(session.acctId, activeGame.gameId, player.playerId))}>Copy Link</button> */}
                       <button className="danger" onClick={() => deletePlayer(player)}>Remove</button>
                     </div>
                   </div>
