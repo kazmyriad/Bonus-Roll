@@ -1,7 +1,16 @@
-Honestly idek if users is gonna be the only file here/the most accurate name, also we could probs 
-replace all the contents of this folder with mongoose stuff. 
+Unused endpoints that need a home:
 
-also we have to figure out how to do mongoose. Since it's local storage idk how that's gonna work with it
+GET /accounts/acctId (get acc info)
 
-Express - Request handling
-Mongo/Mongoose - the actual database
+GET /accounts/:acctId/games/:gameId/players (Get all players in game)
+
+GET /accounts/:acctId/games/:gameId/die (Get all dice in game)
+
+GET/accounts/:acctId/games/:gameId/die/:dieId (Get a single die)
+
+GET /accounts/:acctId/games/:gameId/diceSet (Get all dice sets in a game)
+
+Get /accounts/:acctId/games/:gameId/diceSet/:diceSetId (Get a single dice set)
+
+
+ManageGamesPage fetches entire game from Get/accounts/:acctId/games/:gameId, fetch above independent of this
