@@ -193,10 +193,6 @@ function ManageGamesPage({ session, onLogout }) {
 
   async function createGame(event) {
     event.preventDefault();
-<<<<<<< HEAD
-=======
-
->>>>>>> 166082aa92f5011db92aa6e42a2e8fbd650f9b22
     try {
       const obj = await api.post(`/accounts/${session.acctId}/games`, gameForm, { headers: authHeaders(session.token) });
       console.log("Create game response data:", obj.data);
