@@ -1,5 +1,14 @@
 import {useState, useEffect, useMemo} from "react";
+import axios from "axios";
 import "../styles.css";
+
+const api = axios.create({
+  baseURL: "http://127.0.0.1:3000",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+// Sets base string for axios requests
 
 // const API_BASE = "http://127.0.0.1:3000";
 
@@ -84,6 +93,21 @@ import "../styles.css";
 // function Message({ message }) {
 //   if (!message) return null;
 //   return <p className={`message ${message.type}`}>{message.text}</p>;
+// }
+
+//// Functions copied from above, code below may depend on them for now
+
+function authHeaders(token) {
+  return token ? { Authorization: token } : {};
+}
+
+// function getId(item, documentedKey) {
+//   return toId(item?.[documentedKey] || item?._id || item?.id);
+// }
+
+// function toId(value) {
+//   if (!value) return "";
+//   return String(value);
 // }
 
 
@@ -173,25 +197,34 @@ function ManageGamesPage({ session, onLogout }) {
 
   async function createGame(event) {
     event.preventDefault();
-    setMessage(null);
+
     try {
-      const data = await apiRequest(`/accounts/${session.acctId}/games`, {
-        method: "POST",
-        headers: authHeaders(session.token),
-        body: JSON.stringify(gameForm),
-      });
-      const createdGameId = getId(data.game || data, "gameId");
+      const obj = await api.post(`/accounts/${session.acctId}/games`, gameForm, { headers: authHeaders(session.token) });
+      console.log("Create game response data:", obj.data);
+      const createdGameId = obj.data.gameId;
       await loadGames(createdGameId);
-      setGameForm({ name: "", game: "" });
-      setMessage({ type: "success", text: "Game created." });
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log(error.message);
     }
+
+    // try {
+    //   const data = await apiRequest(`/accounts/${session.acctId}/games`, {
+    //     method: "POST",
+    //     headers: authHeaders(session.token),
+    //     body: JSON.stringify(gameForm),
+    //   });
+    //   const createdGameId = getId(data.game || data, "gameId");
+    //   await loadGames(createdGameId);
+    //   setGameForm({ name: "", game: "" });
+    //   setMessage({ type: "success", text: "Game created." });
+    // } catch (error) {
+    //   setMessage({ type: "error", text: error.message });
+    // }
   }
 
   async function deleteGame(gameId) {
     if (!window.confirm("Delete this game and all of its players, dice, and dice sets?")) return;
-    setMessage(null);
+    // setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${gameId}`, {
         method: "DELETE",
@@ -468,7 +501,7 @@ function ManageGamesPage({ session, onLogout }) {
         <button className="secondary" onClick={onLogout}>Log Out</button>
       </header>
 
-      <Message message={message} />
+      
 
       <section className="grid two">
         <div className="panel">
