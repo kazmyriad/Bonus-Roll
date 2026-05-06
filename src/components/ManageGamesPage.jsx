@@ -79,10 +79,6 @@ function parseListInput(value) {
     });
 }
 
-function Message({ message }) {
-  if (!message) return null;
-  return <p className={`message ${message.type}`}>{message.text}</p>;
-}
 
 function ManageGamesPage({ session, onLogout }) {
   const [games, setGames] = useState([]);
