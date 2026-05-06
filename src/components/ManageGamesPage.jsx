@@ -324,6 +324,15 @@ function ManageGamesPage({ session, onLogout }) {
     }
   }
 
+  async function copyDieID(die) {
+    if (!die) return;
+    try {
+      await navigator.clipboard.writeText(die.dieId);
+    } catch (error) {
+      console.error("Copy die ID failed:", error);
+    }
+  }
+
   async function deleteDie(die) {
     if (!activeGame || !window.confirm(`Delete ${die.dieName}?`)) return;
     try {
