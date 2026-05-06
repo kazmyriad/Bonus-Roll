@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import "./styles.css";
 import LoginPage from "./components/LoginPage.jsx";
 import CreateAccountPage from "./components/CreateAccountPage.jsx";
 import ManageGamesPage from "./components/ManageGamesPage.jsx";
 import PlayerPage from "./components/PlayerPage.jsx";
 
-const API_BASE = "http://127.0.0.1:3000";
+const api = axios.create({
+  baseURL: "http://127.0.0.1:3000",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 function App() {
   const [token, setToken] = useState(null);
@@ -22,20 +28,40 @@ function App() {
 // <---- GRABBING AUTH TOKENSs ---->
   useEffect(()=> {
     const storedToken = localStorage.getItem("token");
-    if (storedToken){
-      setToken(storedToken);
+    const storedAcctId = localStorage.getItem("acctId");
+    if (storedToken && storedAcctId) {
+      axios.get(`/accounts/${storedAcctId}`, {
+        headers: { Authorization: storedToken }
+      })
+      .then((response) => {
+        if (response.status === 200){
+          setToken(storedToken);
+          setAcctId(storedAcctId);
+          setSession("manage")
+        }
+        else{
+          console.log("Invalid Token");
+        }})
+        .catch(() =>{
+          localStorage.removeItem("token");
+          localStorage.removeItem("acctId");
+          setSession("login");
+        })
     }
   }, []);
   // sets token once
 
+  // validating tokens
   useEffect(()=>{
-    if (token) {
+    if (token && acctId) {
       localStorage.setItem("token", token);
+      localStorage.setItem("acctId", acctId);
     } else {
       localStorage.removeItem("token");
+      localStorage.removeItem("acctId");
       setSession("login");
     }
-  }, [token]);
+  }, [token, acctId]);
   // updates when token changes
 
   function initializeSession(data){

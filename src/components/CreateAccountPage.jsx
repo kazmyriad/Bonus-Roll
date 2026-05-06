@@ -2,7 +2,6 @@ import {useState} from "react";
 import axios from "axios";
 import "../styles.css";
 
-// const API_BASE = "http://127.0.0.1:3000";
 const api = axios.create({
     baseURL:"http://127.0.0.1:3000",
     headers:{
@@ -11,18 +10,15 @@ const api = axios.create({
 });
 // Sets base string for axios requests
 
-function CreateAccountPage({ onCreate, onNavigate }) {
+function CreateAccountPage({ onNavigate }) {
   const [loginInfo, setLoginInfo] = useState({ username: "", password: "" });
 
   async function createAccount(event) {
     event.preventDefault();
     // On slide 5, prevents browser from refreshing and effecting React states
-
-    setMessage(null);
     try {
         await api.post("/accounts", loginInfo);
         const login = await api.post("/accounts/login", loginInfo);
-        onCreate(login.data);
     } catch (error) {
         console.log(error);
     }

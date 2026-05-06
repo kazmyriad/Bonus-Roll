@@ -1,7 +1,14 @@
 import {useState, useEffect, useMemo } from "react";
+import axios from "axios";
 import "../styles.css";
 
-const API_BASE = "http://127.0.0.1:3000";
+const api = axios.create({
+    baseURL:"http://127.0.0.1:3000",
+    headers:{
+        "Content-Type": "application/json",
+    }
+});
+// Sets base string for axios requests
 
 function toId(value) {
   if (!value) return "";
@@ -12,48 +19,35 @@ function getId(item, documentedKey) {
   return toId(item?.[documentedKey] || item?._id || item?.id);
 }
 
-function normalizeGame(game) {
-  if (!game) return null;
-  return {
-    ...game,
-    gameId: getId(game, "gameId"),
-    activePlayerId: toId(game.activePlayerId),
-    activeDiceSetId: toId(game.activeDiceSetId),
-    name: game.name || "Untitled game",
-    game: game.game || "Unknown system",
-    players: (game.players || []).map(normalizePlayer),
-    dice: (game.dice || game.die || []).map(normalizeDie),
-    diceSets: (game.diceSets || []).map(normalizeDiceSet),
-  };
-}
+// function normalizeGame(game) {
+//   if (!game) return null;
+//   return {
+//     ...game,
+//     gameId: getId(game, "gameId"),
+//     activePlayerId: toId(game.activePlayerId),
+//     activeDiceSetId: toId(game.activeDiceSetId),
+//     name: game.name || "Untitled game",
+//     game: game.game || "Unknown system",
+//     players: (game.players || []).map(normalizePlayer),
+//     dice: (game.dice || game.die || []).map(normalizeDie),
+//     diceSets: (game.diceSets || []).map(normalizeDiceSet),
+//   };
+// }
 
-function normalizePlayer(player) {
-  if (!player) return null;
-  return { ...player, playerId: getId(player, "playerId") };
-}
+// function normalizePlayer(player) {
+//   if (!player) return null;
+//   return { ...player, playerId: getId(player, "playerId") };
+// }
 
-function normalizeDie(die) {
-  if (!die) return null;
-  return { ...die, dieId: getId(die, "dieId") };
-}
+// function normalizeDie(die) {
+//   if (!die) return null;
+//   return { ...die, dieId: getId(die, "dieId") };
+// }
 
-function normalizeDiceSet(diceSet) {
-  if (!diceSet) return null;
-  return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
-}
-
-async function apiRequest(path, options = {}) {
-  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
-
-  if (response.status === 204) return null;
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.error || `Request failed with status ${response.status}`);
-  }
-  return data;
-}
+// function normalizeDiceSet(diceSet) {
+//   if (!diceSet) return null;
+//   return { ...diceSet, diceSetId: getId(diceSet, "diceSetId"), dice: (diceSet.dice || []).map(toId) };
+// }
 
 function authHeaders(token) {
   return token ? { Authorization: token } : {};
@@ -81,46 +75,59 @@ function parseListInput(value) {
     });
 }
 
-function Message({ message }) {
-  if (!message) return null;
-  return <p className={`message ${message.type}`}>{message.text}</p>;
-}
 
-function PlayerPage({ params }) {
+function PlayerPage({ params, token }) {
   const [game, setGame] = useState(null);
   const [player, setPlayer] = useState(null);
-  const [message, setMessage] = useState(null);
   const [roll, setRoll] = useState(null);
   const [rollInstructions, setRollInstructions] = useState(null);
 
-  async function loadPlayerPage() {
-    const [gameData, playerData] = await Promise.all([
-      apiRequest(`/accounts/${params.acctId}/games/${params.gameId}`),
-      apiRequest(`/accounts/${params.acctId}/games/${params.gameId}/players/${params.playerId}`),
-    ]);
-    setGame(normalizeGame(gameData.game || gameData));
-    setPlayer(normalizePlayer(playerData.player || playerData));
+   async function tokenVerification(){
+    if (!token){
+        throw new Error("No token provided");
+    }
+
+    const response = await api.get(`/accounts/${params.acctId}`, {
+      headers: authHeaders(token)});
+    if (response.status !== 200) {
+      throw new Error("Token invalid or expired");
+    } 
   }
 
+  async function loadPlayerPage() {
+    try {
+      await tokenVerification();
+      const players = await api.get(`/accounts/${params.acctId}/games/${params.gameId}/players`);
+      const currentGame = await api.get(`/accounts/${params.acctId}/games/${params.gameId}`);
+
+      setPlayer(players.data);
+      setGame(currentGame.data);
+    } catch (error) {
+      console.error("Failed to load player page:", error);
+      // Optionally set error state or redirect
+    }
+  }
+
+
   useEffect(() => {
-    loadPlayerPage().catch((error) => setMessage({ type: "error", text: error.message }));
-  }, [params.acctId, params.gameId, params.playerId]);
+    loadPlayerPage().catch((error) => console.log(error));
+  }, [params.acctId, params.gameId, params.playerId, token]);
 
   async function rollDice() {
-    setMessage(null);
     setRoll(null);
     let outcomes = [];
     try {
-      const data = await apiRequest(`/accounts/${params.acctId}/games/${params.gameId}/Roll`, {
-        method: "POST",
-        headers: authHeaders(localStorage.getItem("token") || ""),
-        body: JSON.stringify({ from: params.playerId, playerId: params.playerId }),
+      const response = await api.post(`/accounts/${params.acctId}/games/${params.gameId}/Roll`, {
+        from: params.playerId,
+        playerId: params.playerId
+      }, {
+        headers: authHeaders(token || "")
       });
-      console.log("Roll response data:", data.outcomes);
-      setRoll(data);
+      console.log("Roll response data:", response.data.outcomes);
+      setRoll(response.data);
       await loadPlayerPage();
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.error("Roll failed:", error);
     }
   }
 
@@ -133,7 +140,6 @@ function PlayerPage({ params }) {
         <p className="eyebrow">{game?.game || "Game"}</p>
         <h1>{game?.name || "Loading game"}</h1>
         <h2>{player?.username || "Loading player"}</h2>
-        <Message message={message} />
         <div className="roll-box">
           <p>{activeForPlayer ? "You are up." : "Waiting for the DM to arm your roll."}</p>
           <p className="muted">{activeDiceSet ? activeDiceSet.diceSetName + ": " + activeDiceSet.scoring : "No dice set active."}</p>

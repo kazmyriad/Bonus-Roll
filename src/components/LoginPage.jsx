@@ -21,7 +21,6 @@ function LoginPage({ onLogin, onNavigate }) {
   async function login(event) {
     event.preventDefault();
     // On slide 5, prevents browser from refreshing and effecting React states
-    setMessage(null);
     try {
       const response = await api.post("/accounts/login", loginInfo);
       onLogin(response.data);

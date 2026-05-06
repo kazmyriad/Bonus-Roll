@@ -105,7 +105,6 @@ function ManageGamesPage({ session, onLogout }) {
     scoring: "Scoring instructions",
   });
   const [activation, setActivation] = useState({ activePlayerId: "", activeDiceSetId: "" });
-  const [message, setMessage] = useState(null);
   const activeGame = useMemo(
     () => games.find((game) => game.gameId === activeGameId) || games[0] || null,
     [games, activeGameId],
@@ -123,7 +122,7 @@ function ManageGamesPage({ session, onLogout }) {
   }
 
   useEffect(() => {
-    loadGames().catch((error) => setMessage({ type: "error", text: error.message }));
+    loadGames().catch((error) => console.log(""));
   }, [session.acctId]);
 
   async function refreshGame(gameId = activeGame?.gameId) {
@@ -139,7 +138,6 @@ function ManageGamesPage({ session, onLogout }) {
 
   async function updateAccount(event) {
     event.preventDefault();
-    setMessage(null);
     const body = {};
     if (accountForm.username) body.username = accountForm.username;
     if (accountForm.password) body.password = accountForm.password;
@@ -151,15 +149,13 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify(body),
       });
       setAccountForm({ username: "", password: "" });
-      setMessage({ type: "success", text: "Account updated." });
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
   async function deleteAccount() {
     if (!window.confirm("Delete this DM account and all games?")) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}`, {
         method: "DELETE",
@@ -167,13 +163,12 @@ function ManageGamesPage({ session, onLogout }) {
       });
       onLogout();
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+        console.log("");
+        }
   }
 
   async function createGame(event) {
     event.preventDefault();
-    setMessage(null);
     try {
       const data = await apiRequest(`/accounts/${session.acctId}/games`, {
         method: "POST",
@@ -183,15 +178,14 @@ function ManageGamesPage({ session, onLogout }) {
       const createdGameId = getId(data.game || data, "gameId");
       await loadGames(createdGameId);
       setGameForm({ name: "", game: "" });
-      setMessage({ type: "success", text: "Game created." });
+      console.log("")
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
   async function deleteGame(gameId) {
     if (!window.confirm("Delete this game and all of its players, dice, and dice sets?")) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${gameId}`, {
         method: "DELETE",
@@ -199,9 +193,9 @@ function ManageGamesPage({ session, onLogout }) {
       });
       setGames((current) => current.filter((game) => game.gameId !== gameId));
       setActiveGameId("");
-      setMessage({ type: "success", text: "Game deleted." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -210,7 +204,7 @@ function ManageGamesPage({ session, onLogout }) {
     if (!name) return;
     const system = window.prompt("Game system", game.game);
     if (!system) return;
-    setMessage(null);
+
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${game.gameId}`, {
         method: "PATCH",
@@ -218,9 +212,9 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ name, game: system }),
       });
       await refreshGame(game.gameId);
-      setMessage({ type: "success", text: "Game updated." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -230,7 +224,6 @@ function ManageGamesPage({ session, onLogout }) {
     if (!name) return;
     const system = window.prompt("Game system", game.game);
     if (!system) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${game.gameId}`, {
         method: "PUT",
@@ -238,16 +231,15 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ name, game: system }),
       });
       await refreshGame(game.gameId);
-      setMessage({ type: "success", text: "Game reset." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
   async function createPlayer(event) {
     event.preventDefault();
     if (!activeGame) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players`, {
         method: "POST",
@@ -256,9 +248,9 @@ function ManageGamesPage({ session, onLogout }) {
       });
       setPlayerName("");
       await loadGames(activeGame.gameId);
-      setMessage({ type: "success", text: "Player created." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -266,7 +258,6 @@ function ManageGamesPage({ session, onLogout }) {
     if (!activeGame) return;
     const username = window.prompt("Player name", player.username);
     if (!username) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
         method: "PATCH",
@@ -274,9 +265,9 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ username }),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Player updated." });
+     console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -284,7 +275,6 @@ function ManageGamesPage({ session, onLogout }) {
     if (!activeGame) return;
     const username = window.prompt("Replacement player name", player.username);
     if (!username) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
         method: "PUT",
@@ -292,9 +282,9 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ username }),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Player replaced." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -305,23 +295,21 @@ function ManageGamesPage({ session, onLogout }) {
 
   async function deletePlayer(player) {
     if (!activeGame || !window.confirm(`Remove ${player.username}?`)) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/players/${player.playerId}`, {
         method: "DELETE",
         headers: authHeaders(session.token),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Player removed." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
   async function createDie(event) {
     event.preventDefault();
     if (!activeGame) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die`, {
         method: "POST",
@@ -335,9 +323,9 @@ function ManageGamesPage({ session, onLogout }) {
       });
       setDieForm({ dieName: "", faceValues: "1,2,3,4,5,6", frequencyDist: "1,1,1,1,1,1", color: "blue" });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Die created." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -347,7 +335,6 @@ function ManageGamesPage({ session, onLogout }) {
     if (!dieName) return;
     const color = window.prompt("Color", die.color);
     if (!color) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`, {
         method: "PATCH",
@@ -355,9 +342,9 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ dieName, color }),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Die updated." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -368,16 +355,15 @@ function ManageGamesPage({ session, onLogout }) {
 
   async function deleteDie(die) {
     if (!activeGame || !window.confirm(`Delete ${die.dieName}?`)) return;
-    setMessage(null);
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/die/${die.dieId}`, {
         method: "DELETE",
         headers: authHeaders(session.token),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Die deleted." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -385,7 +371,7 @@ function ManageGamesPage({ session, onLogout }) {
     console.log("Creating dice set with form data:", diceSetForm);
     event.preventDefault();
     if (!activeGame) return;
-    setMessage(null);
+
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet`, {
         method: "POST",
@@ -398,9 +384,9 @@ function ManageGamesPage({ session, onLogout }) {
       });
       setDiceSetForm({ diceSetName: "", dice: "", scoring: "Scoring instructions" });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Dice set created." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -412,7 +398,7 @@ function ManageGamesPage({ session, onLogout }) {
     if (!dice) return;
     const scoring = window.prompt("Scoring", diceSet.scoring);
     if (!scoring) return;
-    setMessage(null);
+    
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`, {
         method: "PUT",
@@ -420,31 +406,31 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify({ diceSetName, dice: parseListInput(dice), scoring }),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Dice set replaced." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
   async function deleteDiceSet(diceSet) {
     if (!activeGame || !window.confirm(`Delete ${diceSet.diceSetName}?`)) return;
-    setMessage(null);
+    
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}/diceSet/${diceSet.diceSetId}`, {
         method: "DELETE",
         headers: authHeaders(session.token),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Dice set deleted." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
   async function setActiveRoll(event) {
     event.preventDefault();
     if (!activeGame) return;
-    setMessage(null);
+    
     try {
       await apiRequest(`/accounts/${session.acctId}/games/${activeGame.gameId}`, {
         method: "PATCH",
@@ -452,9 +438,9 @@ function ManageGamesPage({ session, onLogout }) {
         body: JSON.stringify(activation),
       });
       await refreshGame(activeGame.gameId);
-      setMessage({ type: "success", text: "Active player and dice set updated." });
+      console.log("");
     } catch (error) {
-      setMessage({ type: "error", text: error.message });
+      console.log("");
     }
   }
 
@@ -467,8 +453,6 @@ function ManageGamesPage({ session, onLogout }) {
         </div>
         <button className="secondary" onClick={onLogout}>Log Out</button>
       </header>
-
-      <Message message={message} />
 
       <section className="grid two">
         <div className="panel">
