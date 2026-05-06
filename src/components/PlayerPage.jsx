@@ -97,7 +97,7 @@ function PlayerPage({ token }) {
         `/accounts/${params.acctId}/games/${params.gameId}/roll`,
         {
           from: params.playerId,
-          playerId: params.playerId
+          playerId: player?._id
         },
         { headers: authHeaders(token) } 
       );

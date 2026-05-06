@@ -883,7 +883,7 @@ app.delete("/accounts/:acctId/games/:gameId/diceSet/:diceSetId", auth , async (r
 /* --- ROLL!! -- */
 // this is really the only super fun part of the code...
 // 30) POST /accounts/:acctId/games/:gameId/Roll
-app.post("/accounts/:acctId/games/:gameId/Roll", auth , async (req, res) => {
+app.post("/accounts/:acctId/games/:gameId/roll" , async (req, res) => {
   try {
       const acct = await Account.findById(req.params.acctId);
       if (!acct) { return res.status(404).json({ error: "Account not found" })}
