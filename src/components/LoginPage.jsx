@@ -10,11 +10,6 @@ const api = axios.create({
 });
 // Sets base string for axios requests
 
-
-function getErrorMessage(error) {
-  return "Request failed:" + error.message;
-}
-
 function LoginPage({ onLogin, onNavigate }) {
   const [loginInfo, setLoginInfo] = useState({ username: "", password: "" });
 
